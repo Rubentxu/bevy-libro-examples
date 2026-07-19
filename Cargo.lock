@@ -85,6 +85,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy-book-chapter-05"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_android"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -207,6 +214,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_input_focus"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e1a14f56c6e722048ec9dc20dbbc6f46b8037f61e319ea776829199278da166"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_input",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_window",
+ "log",
+ "thiserror 2.0.19",
+]
+
+[[package]]
 name = "bevy_internal"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -218,6 +241,7 @@ dependencies = [
  "bevy_diagnostic",
  "bevy_ecs",
  "bevy_input",
+ "bevy_input_focus",
  "bevy_math",
  "bevy_platform",
  "bevy_ptr",
@@ -373,6 +397,22 @@ dependencies = [
  "bevy_platform",
  "disqualified",
  "indexmap",
+]
+
+[[package]]
+name = "bevy_window"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efcc255b43db156fba393b2ff8fa552aac5e7e02ae4c6298eacdbab655ddf988"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_input",
+ "bevy_math",
+ "bevy_platform",
+ "bevy_reflect",
+ "log",
+ "raw-window-handle",
 ]
 
 [[package]]
@@ -939,6 +979,12 @@ dependencies = [
  "num-traits",
  "rand",
 ]
+
+[[package]]
+name = "raw-window-handle"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
 name = "rustc_version"
