@@ -1,17 +1,13 @@
-// snippet 18 from cap-05.html §5.6 — FromWorld initialization
-// Run: cargo run --example from_world
 use bevy::prelude::*;
-use bevy_book_chapter_05::MejorPuntuacion;
+use bevy_book_chapter_05::BestScore;
 
 fn main() {
     let mut app = App::new();
-    // init_resource calls FromWorld::from_world() automatically
-    app.init_resource::<MejorPuntuacion>();
-    app.add_systems(Update, mostrar_mejor_puntuacion);
-
+    app.init_resource::<BestScore>();
+    app.add_systems(Update, show_best_score);
     app.update();
 }
 
-fn mostrar_mejor_puntuacion(mejor: Res<MejorPuntuacion>) {
-    println!("Mejor puntuación cargada: {}", mejor.valor);
+fn show_best_score(best: Res<BestScore>) {
+    println!("Best score loaded: {}", best.value);
 }

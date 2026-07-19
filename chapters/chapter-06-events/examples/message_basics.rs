@@ -1,37 +1,31 @@
-// snippets §6.2-6.4 — Basic message send/receive
-// Run: cargo run --example message_basics
+// §6.2-6.4 — Basic message send/receive
 use bevy::prelude::*;
-use bevy_book_chapter_06::{CambioDeNivel, DanoRecibido, MonedaRecogida};
+use bevy_book_chapter_06::{CoinCollected, DamageReceived, LevelChange};
 
 fn main() {
     let mut app = App::new();
-    app.add_message::<DanoRecibido>();
-    app.add_message::<MonedaRecogida>();
-    app.add_message::<CambioDeNivel>();
-
-    // §6.3 — Write messages via MessageWriter
-    app.add_systems(Update, enviar_mensajes);
-    // §6.4 — Read messages via MessageReader
-    app.add_systems(Update, leer_mensajes.after(enviar_mensajes));
-
+    app.add_message::<DamageReceived>();
+    app.add_message::<CoinCollected>();
+    app.add_message::<LevelChange>();
+    app.add_systems(Update, (send_messages, read_messages.after(send_messages)));
     app.update();
     app.update();
 }
 
-fn enviar_mensajes(mut w1: MessageWriter<MonedaRecogida>, mut w2: MessageWriter<CambioDeNivel>) {
-    w1.write(MonedaRecogida {
-        cantidad: 5,
-        posicion: (10.0, 20.0),
+fn send_messages(mut w1: MessageWriter<CoinCollected>, mut w2: MessageWriter<LevelChange>) {
+    w1.write(CoinCollected {
+        amount: 5,
+        position: (10.0, 20.0),
     });
-    w2.write(CambioDeNivel { nuevo_nivel: 2 });
-    println!("Mensajes enviados");
+    w2.write(LevelChange { new_level: 2 });
+    println!("Messages sent");
 }
 
-fn leer_mensajes(mut r1: MessageReader<MonedaRecogida>, mut r2: MessageReader<CambioDeNivel>) {
+fn read_messages(mut r1: MessageReader<CoinCollected>, mut r2: MessageReader<LevelChange>) {
     for msg in r1.read() {
-        println!("Moneda: {} en {:?}", msg.cantidad, msg.posicion);
+        println!("Coin: {} at {:?}", msg.amount, msg.position);
     }
     for msg in r2.read() {
-        println!("Nivel cambiado a: {}", msg.nuevo_nivel);
+        println!("Level changed to: {}", msg.new_level);
     }
 }

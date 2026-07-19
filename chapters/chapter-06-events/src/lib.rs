@@ -1,53 +1,35 @@
-// Capítulo 6. Eventos (Messages en Bevy 0.19)
-//
-// NOTE CRÍTICA: Bevy 0.19 renombró toda la API de eventos:
-//   Event         → Message
-//   EventWriter   → MessageWriter
-//   EventReader   → MessageReader
-//   Events<T>     → Messages<T>
-//   add_event     → add_message
-//
-// El libro original usa la API vieja (Event/EventWriter/EventReader).
-// Este código usa la API correcta de Bevy 0.19.
+// Capítulo 6. Events (Messages in Bevy 0.19) — English identifiers
 
 use bevy::prelude::*;
 
 // ============================================================================
-// MESSAGE TYPES (snippets §6.2)
+// MESSAGE TYPES (§6.2)
 // ============================================================================
 
-/// Daño recibido por una entity (snippet §6.2)
 #[derive(Message, Debug)]
-pub struct DanoRecibido {
-    pub entidad: Entity,
-    pub cantidad: f32,
+pub struct DamageReceived {
+    pub entity: Entity,
+    pub amount: f32,
 }
 
-/// Moneda recogida por el player (snippet §6.2)
 #[derive(Message, Debug)]
-pub struct MonedaRecogida {
-    pub cantidad: u32,
-    pub posicion: (f32, f32),
+pub struct CoinCollected {
+    pub amount: u32,
+    pub position: (f32, f32),
 }
 
-/// Cambio de nivel (snippet §6.2)
 #[derive(Message, Debug)]
-pub struct CambioDeNivel {
-    pub nuevo_nivel: usize,
+pub struct LevelChange {
+    pub new_level: usize,
 }
 
-// ============================================================================
-// COMBAT EXAMPLE TYPES (snippet §6.7)
-// ============================================================================
-
-/// Damage message — target recibe cantidad de daño
+// Combat messages (§6.7)
 #[derive(Message, Debug)]
 pub struct DamageMessage {
     pub target: Entity,
-    pub cantidad: f32,
+    pub amount: f32,
 }
 
-/// Death message — victim ha muerto
 #[derive(Message, Debug)]
 pub struct DeathMessage {
     pub victim: Entity,
@@ -59,8 +41,8 @@ pub struct DeathMessage {
 // ============================================================================
 
 #[derive(Component, Debug)]
-pub struct Vida {
-    pub actual: f32,
+pub struct Health {
+    pub current: f32,
     pub max: f32,
 }
 
@@ -72,7 +54,7 @@ pub struct Enemy;
 
 #[derive(Component, Debug)]
 pub struct Hitbox {
-    pub debe_recibir_dano: bool,
+    pub should_take_damage: bool,
 }
 
 // ============================================================================
@@ -80,77 +62,69 @@ pub struct Hitbox {
 // ============================================================================
 
 #[derive(Resource, Debug, Default)]
-pub struct Puntuacion(pub u32);
+pub struct Score(pub u32);
 
 // ============================================================================
 // APP BUILDER
 // ============================================================================
 
-/// App de combate headless con messages registrados
 pub fn build_combat_app() -> App {
     let mut app = App::new();
     app.init_resource::<Time>();
-    app.init_resource::<Puntuacion>();
-
-    // Registrar messages (Bevy 0.19 API)
+    app.init_resource::<Score>();
     app.add_message::<DamageMessage>();
     app.add_message::<DeathMessage>();
-    app.add_message::<DanoRecibido>();
-    app.add_message::<MonedaRecogida>();
-    app.add_message::<CambioDeNivel>();
-
-    // Spawn player + enemies
+    app.add_message::<DamageReceived>();
+    app.add_message::<CoinCollected>();
+    app.add_message::<LevelChange>();
     app.world_mut().spawn((
-        Vida {
-            actual: 100.0,
+        Health {
+            current: 100.0,
             max: 100.0,
         },
         Player,
     ));
     app.world_mut().spawn((
-        Vida {
-            actual: 50.0,
+        Health {
+            current: 50.0,
             max: 50.0,
         },
         Enemy,
     ));
     app.world_mut().spawn((
-        Vida {
-            actual: 30.0,
+        Health {
+            current: 30.0,
             max: 30.0,
         },
         Enemy,
     ));
-
     app
 }
 
 // ============================================================================
-// COMBAT SYSTEMS (snippet §6.7)
+// COMBAT SYSTEMS (§6.7)
 // ============================================================================
 
-/// System que envía DamageMessage al primer enemy
-pub fn atacar(enemies: Query<Entity, With<Enemy>>, mut writer: MessageWriter<DamageMessage>) {
+pub fn attack(enemies: Query<Entity, With<Enemy>>, mut writer: MessageWriter<DamageMessage>) {
     if let Some(target) = enemies.iter().next() {
         writer.write(DamageMessage {
             target,
-            cantidad: 25.0,
+            amount: 25.0,
         });
     }
 }
 
-/// System que procesa daño y emite muerte si vida <= 0
-pub fn procesar_dano(
+pub fn process_damage(
     mut reader: MessageReader<DamageMessage>,
-    mut query: Query<&mut Vida>,
+    mut query: Query<&mut Health>,
     mut death_writer: MessageWriter<DeathMessage>,
 ) {
-    for evento in reader.read() {
-        if let Ok(mut vida) = query.get_mut(evento.target) {
-            vida.actual -= evento.cantidad;
-            if vida.actual <= 0.0 {
+    for event in reader.read() {
+        if let Ok(mut health) = query.get_mut(event.target) {
+            health.current -= event.amount;
+            if health.current <= 0.0 {
                 death_writer.write(DeathMessage {
-                    victim: evento.target,
+                    victim: event.target,
                     killer: None,
                 });
             }
@@ -158,16 +132,15 @@ pub fn procesar_dano(
     }
 }
 
-/// System que reacciona a la muerte: suma puntos, despawnea
-pub fn reaccionar_a_muerte(
+pub fn react_to_death(
     mut reader: MessageReader<DeathMessage>,
-    mut puntos: ResMut<Puntuacion>,
+    mut score: ResMut<Score>,
     mut commands: Commands,
 ) {
-    for evento in reader.read() {
-        println!("¡Entity {:?} ha muerto!", evento.victim);
-        puntos.0 += 100;
-        commands.entity(evento.victim).despawn();
+    for event in reader.read() {
+        println!("Entity {:?} has died!", event.victim);
+        score.0 += 100;
+        commands.entity(event.victim).despawn();
     }
 }
 
@@ -181,205 +154,140 @@ mod tests {
 
     #[test]
     fn message_send_and_receive_roundtrip() {
-        // §6.3-6.4 — MessageWriter sends, MessageReader receives
         let mut app = App::new();
-        app.add_message::<DanoRecibido>();
-
-        // Write a message directly via Messages resource
+        app.add_message::<DamageReceived>();
         app.world_mut()
-            .resource_mut::<Messages<DanoRecibido>>()
-            .write(DanoRecibido {
-                entidad: Entity::PLACEHOLDER,
-                cantidad: 25.0,
+            .resource_mut::<Messages<DamageReceived>>()
+            .write(DamageReceived {
+                entity: Entity::PLACEHOLDER,
+                amount: 25.0,
             });
-
-        // Swap buffer so cursor can read it
         app.world_mut()
-            .resource_mut::<Messages<DanoRecibido>>()
+            .resource_mut::<Messages<DamageReceived>>()
             .update();
-
-        // Read via cursor
-        let messages = app.world_mut().resource_mut::<Messages<DanoRecibido>>();
+        let messages = app.world_mut().resource_mut::<Messages<DamageReceived>>();
         let mut cursor = messages.get_cursor();
         let events: Vec<_> = cursor.read(&messages).collect();
         assert_eq!(events.len(), 1);
-        assert_eq!(events[0].cantidad, 25.0);
+        assert_eq!(events[0].amount, 25.0);
     }
 
     #[test]
     fn multiple_messages_same_frame() {
-        // §6.3 — Multiple writes in one frame
         let mut app = App::new();
-        app.add_message::<MonedaRecogida>();
-
-        // Write 3 messages
+        app.add_message::<CoinCollected>();
         {
-            let mut messages = app.world_mut().resource_mut::<Messages<MonedaRecogida>>();
-            messages.write(MonedaRecogida {
-                cantidad: 5,
-                posicion: (10.0, 20.0),
+            let mut m = app.world_mut().resource_mut::<Messages<CoinCollected>>();
+            m.write(CoinCollected {
+                amount: 5,
+                position: (10.0, 20.0),
             });
-            messages.write(MonedaRecogida {
-                cantidad: 10,
-                posicion: (30.0, 40.0),
+            m.write(CoinCollected {
+                amount: 10,
+                position: (30.0, 40.0),
             });
-            messages.write(MonedaRecogida {
-                cantidad: 15,
-                posicion: (50.0, 60.0),
+            m.write(CoinCollected {
+                amount: 15,
+                position: (50.0, 60.0),
             });
         }
-
         app.world_mut()
-            .resource_mut::<Messages<MonedaRecogida>>()
+            .resource_mut::<Messages<CoinCollected>>()
             .update();
-
-        let messages = app.world_mut().resource_mut::<Messages<MonedaRecogida>>();
+        let messages = app.world_mut().resource_mut::<Messages<CoinCollected>>();
         let mut cursor = messages.get_cursor();
         let events: Vec<_> = cursor.read(&messages).collect();
         assert_eq!(events.len(), 3);
-        assert_eq!(events[0].cantidad, 5);
-        assert_eq!(events[1].cantidad, 10);
-        assert_eq!(events[2].cantidad, 15);
     }
 
     #[test]
     fn combat_damage_reduces_health() {
-        // §6.7 — DamageMessage reduces Vida
-        // Messages have 1-frame delay due to double-buffering
         let mut app = build_combat_app();
-        app.add_systems(Update, (atacar, procesar_dano, reaccionar_a_muerte).chain());
-
-        // Run multiple frames to allow message propagation
+        app.add_systems(Update, (attack, process_damage, react_to_death).chain());
         for _ in 0..5 {
             app.update();
         }
-
-        // After 5 frames, the 50 HP enemy should have taken significant damage
-        // (25 per hit, delayed by 1 frame each)
-        let enemy_health = app
+        let enemy = app
             .world_mut()
-            .query_filtered::<&Vida, With<Enemy>>()
+            .query_filtered::<&Health, With<Enemy>>()
             .iter(app.world())
             .next();
-
-        if let Some(h) = enemy_health {
-            assert!(
-                h.actual < 50.0,
-                "enemy should have taken damage, got {}",
-                h.actual
-            );
+        if let Some(h) = enemy {
+            assert!(h.current < 50.0, "enemy should have taken damage");
         }
-        // If no enemy found, they all died — also valid
     }
 
     #[test]
     fn combat_death_triggers_on_zero_health() {
-        // §6.7 — Eventually all enemies die from repeated attacks
         let mut app = build_combat_app();
-        app.add_systems(Update, (atacar, procesar_dano, reaccionar_a_muerte).chain());
-
-        // Run enough frames for all enemies to die
+        app.add_systems(Update, (attack, process_damage, react_to_death).chain());
         for _ in 0..10 {
             app.update();
         }
-
-        // Score should have increased from kills
-        let score = app.world().resource::<Puntuacion>();
-        assert!(score.0 > 0, "should have kills, got {} points", score.0);
+        assert!(app.world().resource::<Score>().0 > 0);
     }
 
     #[test]
     fn double_buffer_persists_messages_across_frames() {
-        // §6.5 — Double-buffering: message written in frame N is readable in frame N+1
         let mut app = App::new();
-        app.add_message::<CambioDeNivel>();
-
-        // Write message
+        app.add_message::<LevelChange>();
         app.world_mut()
-            .resource_mut::<Messages<CambioDeNivel>>()
-            .write(CambioDeNivel { nuevo_nivel: 2 });
-
-        // Create cursor BEFORE update, then swap buffer
+            .resource_mut::<Messages<LevelChange>>()
+            .write(LevelChange { new_level: 2 });
         let mut cursor = {
-            let mut messages = app.world_mut().resource_mut::<Messages<CambioDeNivel>>();
-            let c = messages.get_cursor();
-            messages.update(); // rotate buffer
+            let mut m = app.world_mut().resource_mut::<Messages<LevelChange>>();
+            let c = m.get_cursor();
+            m.update();
             c
         };
-
-        // Cursor should be able to read the message after rotation
-        let messages = app.world().resource::<Messages<CambioDeNivel>>();
-        let events: Vec<_> = cursor.read(messages).collect();
-        assert!(
-            !events.is_empty(),
-            "message should persist via double-buffering"
-        );
+        let messages = app.world().resource::<Messages<LevelChange>>();
+        assert!(!cursor.read(messages).collect::<Vec<_>>().is_empty());
     }
 
     #[test]
     fn reader_read_consumes_events() {
-        // §6.8 Error común #2: reader.read() dos veces → segunda vez vacío
         let mut app = App::new();
-        app.add_message::<DanoRecibido>();
-
-        // Write a message
+        app.add_message::<DamageReceived>();
         app.world_mut()
-            .resource_mut::<Messages<DanoRecibido>>()
-            .write(DanoRecibido {
-                entidad: Entity::PLACEHOLDER,
-                cantidad: 10.0,
+            .resource_mut::<Messages<DamageReceived>>()
+            .write(DamageReceived {
+                entity: Entity::PLACEHOLDER,
+                amount: 10.0,
             });
         app.world_mut()
-            .resource_mut::<Messages<DanoRecibido>>()
+            .resource_mut::<Messages<DamageReceived>>()
             .update();
-
-        // First read — should get 1 event
-        let messages = app.world_mut().resource_mut::<Messages<DanoRecibido>>();
-        // Note: cursor tracks position, so second read with SAME cursor gives 0
+        let messages = app.world_mut().resource_mut::<Messages<DamageReceived>>();
         let mut cursor = messages.get_cursor();
-        let first_read: Vec<_> = cursor.read(&messages).collect();
-        assert_eq!(first_read.len(), 1);
-
-        // Second read with same cursor — should be 0 (already consumed)
-        let second_read: Vec<_> = cursor.read(&messages).collect();
-        assert_eq!(second_read.len(), 0, "second read should be empty");
+        assert_eq!(cursor.read(&messages).collect::<Vec<_>>().len(), 1);
+        assert_eq!(cursor.read(&messages).collect::<Vec<_>>().len(), 0);
     }
 
     #[test]
     fn multiple_message_types_independent() {
-        // §6.3 — Multiple message types don't interfere
         let mut app = App::new();
-        app.add_message::<MonedaRecogida>();
-        app.add_message::<CambioDeNivel>();
-
-        // Write different message types
+        app.add_message::<CoinCollected>();
+        app.add_message::<LevelChange>();
         app.world_mut()
-            .resource_mut::<Messages<MonedaRecogida>>()
-            .write(MonedaRecogida {
-                cantidad: 5,
-                posicion: (1.0, 2.0),
+            .resource_mut::<Messages<CoinCollected>>()
+            .write(CoinCollected {
+                amount: 5,
+                position: (1.0, 2.0),
             });
         app.world_mut()
-            .resource_mut::<Messages<CambioDeNivel>>()
-            .write(CambioDeNivel { nuevo_nivel: 3 });
-
+            .resource_mut::<Messages<LevelChange>>()
+            .write(LevelChange { new_level: 3 });
         app.world_mut()
-            .resource_mut::<Messages<MonedaRecogida>>()
+            .resource_mut::<Messages<CoinCollected>>()
             .update();
         app.world_mut()
-            .resource_mut::<Messages<CambioDeNivel>>()
+            .resource_mut::<Messages<LevelChange>>()
             .update();
-
-        // Read MonedaRecogida
-        let coins = app.world_mut().resource_mut::<Messages<MonedaRecogida>>();
-        let mut coin_cursor = coins.get_cursor();
-        let coin_events: Vec<_> = coin_cursor.read(&coins).collect();
-        assert_eq!(coin_events.len(), 1);
-
-        // Read CambioDeNivel
-        let levels = app.world_mut().resource_mut::<Messages<CambioDeNivel>>();
-        let mut level_cursor = levels.get_cursor();
-        let level_events: Vec<_> = level_cursor.read(&levels).collect();
-        assert_eq!(level_events.len(), 1);
+        let coins = app.world_mut().resource_mut::<Messages<CoinCollected>>();
+        let mut c1 = coins.get_cursor();
+        assert_eq!(c1.read(&coins).collect::<Vec<_>>().len(), 1);
+        let levels = app.world_mut().resource_mut::<Messages<LevelChange>>();
+        let mut c2 = levels.get_cursor();
+        assert_eq!(c2.read(&levels).collect::<Vec<_>>().len(), 1);
     }
 }

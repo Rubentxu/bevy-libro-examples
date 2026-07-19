@@ -1,57 +1,47 @@
-// snippet 20 from cap-05.html §5.9 — Complete example: marcador + player
-// Run: cargo run --example complete
-//
-// NOTE: Original book example uses DefaultPlugins (window). This headless variant
-// uses ScheduleRunnerPlugin + simulates Space/A/D key presses via ButtonInput.
-use std::time::Duration;
-
+// snippet §5.9 — Complete: score + player with keyboard input (headless)
 use bevy::{app::ScheduleRunnerPlugin, prelude::*};
-use bevy_book_chapter_05::{Player, PuntuacionGlobal};
+use bevy_book_chapter_05::{GlobalScore, Player};
+use std::time::Duration;
 
 fn main() {
     let mut app = App::new();
     app.add_plugins(ScheduleRunnerPlugin::run_once());
     app.init_resource::<Time>();
     app.init_resource::<ButtonInput<KeyCode>>();
-
-    app.init_resource::<PuntuacionGlobal>();
+    app.init_resource::<GlobalScore>();
     app.add_systems(Startup, |mut commands: Commands| {
         commands.spawn((Transform::default(), Player));
     });
-    app.add_systems(Update, (input_y_subir, mover_player, mostrar_puntos));
+    app.add_systems(Update, (handle_input, move_player, show_points));
 
-    // Simulate Space + A pressed
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
         .press(KeyCode::Space);
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
         .press(KeyCode::KeyA);
-
     app.world_mut()
         .resource_mut::<Time>()
         .advance_by(Duration::from_secs_f32(1.0 / 60.0));
     app.update();
 
-    // Release Space
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
         .release(KeyCode::Space);
-
     app.world_mut()
         .resource_mut::<Time>()
         .advance_by(Duration::from_secs_f32(1.0 / 60.0));
     app.update();
 }
 
-fn input_y_subir(input: Res<ButtonInput<KeyCode>>, mut puntos: ResMut<PuntuacionGlobal>) {
+fn handle_input(input: Res<ButtonInput<KeyCode>>, mut score: ResMut<GlobalScore>) {
     if input.just_pressed(KeyCode::Space) {
-        puntos.puntos += 10;
-        println!("+10 puntos! Total: {}", puntos.puntos);
+        score.points += 10;
+        println!("+10 points! Total: {}", score.points);
     }
 }
 
-fn mover_player(
+fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut Transform, With<Player>>,
@@ -63,13 +53,13 @@ fn mover_player(
     if input.pressed(KeyCode::KeyD) {
         dir += 1.0;
     }
-    for mut t in &mut query {
-        t.translation.x += dir * 100.0 * time.delta_secs();
+    for mut tf in &mut query {
+        tf.translation.x += dir * 100.0 * time.delta_secs();
     }
 }
 
-fn mostrar_puntos(puntos: Res<PuntuacionGlobal>) {
-    if puntos.puntos > 0 && puntos.is_changed() {
-        println!("Puntos: {}", puntos.puntos);
+fn show_points(score: Res<GlobalScore>) {
+    if score.points > 0 && score.is_changed() {
+        println!("Points: {}", score.points);
     }
 }
