@@ -127,6 +127,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy-book-chapter-11"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "bevy-book-chapter-12"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "bevy-book-chapter-13"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_android"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
