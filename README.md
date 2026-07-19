@@ -44,12 +44,12 @@ cargo test -p bevy-book-chapter-22 -- a_star_around_wall
 ## Resultado
 
 - **38 crates** cubriendo todos los capítulos (04–28b)
-- **112 tests** pasando
+- **197 tests** pasando
 - **Bevy 0.19.0** (`default-features = false` para tests headless)
 
 ## Capítulos con tests sustantivos
 
-Los capítulos marcados con tests usan la API ECS pura (sin GPU):
+Los capítulos marcados con tests usan lógica pura (sin GPU):
 
 | Capítulo | Tests | Conceptos clave |
 |----------|-------|-----------------|
@@ -63,13 +63,20 @@ Los capítulos marcados con tests usan la API ECS pura (sin GPU):
 | 11 | 7 | ChildOf, custom Likes/LikedBy |
 | 12 | 6 | Scene building, hierarchies |
 | 13 | 6 | Hooks vs observers vs systems |
+| 17 | 13 | AABB/circle collision, kinematic bodies, coyote time |
+| 19 | 10 | Animation clips, frame cycling, blend trees |
+| 20 | 12 | Screen shake, hit pause, knockback, cooldowns |
 | 21 | 11 | FSM, utility AI, behavior trees |
 | 21c | 12 | RNG, cave/dungeon generation |
 | 22 | 12 | A* algorithm, grid maps |
 | 24 | 7 | Serialization, checkpoints |
+| 25b | 11 | Rollback: state snapshots, input buffers, re-simulation |
+| 26 | 12 | Frame metrics, budgets, percentiles, profiling |
+| 27b | 10 | SemVer parsing, change types, compatibility |
+| 28b | 13 | Platforms, build profiles, release checklist |
 
-Los capítulos de rendering/GPU (14–20, 23, 25–28b) son stubs que compilan
-pero requieren `DefaultPlugins` y GPU para tests funcionales.
+Los capítulos de rendering/GPU puro (14–16, 18, 23, 25, 27, 28) son stubs
+que compilan pero requieren `DefaultPlugins` y GPU para tests funcionales.
 
 ## Errata
 
