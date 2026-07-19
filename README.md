@@ -1,52 +1,77 @@
-# Bevy Book Examples
+# Bevy 2D/ECS — Repo de Ejemplos
 
-Compilable examples for the Bevy 2D and ECS book, targeting Bevy 0.19 and Rust
-Edition 2024.
+Código de ejemplo del libro **"Patrones 2D y ECS con Bevy 0.19"**.
 
-This repository turns the book's illustrative snippets into executable,
-testable code. It intentionally keeps chapter crates independent so that each
-chapter can enable only the Bevy features it teaches.
+Todos los ejemplos están verificados contra la API real de Bevy 0.19 mediante tests automatizados.
 
-## Requirements
+## Estructura
 
-- Rust 1.96.0 (installed automatically by `rustup` from `rust-toolchain.toml`)
-- Cargo
-
-## Layout
-
-```text
+```
 chapters/
-  chapter-04-first-contact/
-    src/lib.rs                 # Testable chapter behavior
-    examples/first_ecs.rs      # Executable section example
+├── chapter-04-first-contact/       # Entities, Components, Systems (10 tests)
+├── chapter-05-queries-resources/   # Query, ParamSet, Resources (14 tests)
+├── chapter-06-events/              # Message API, combat (7 tests)
+├── chapter-07-schedules/           # System sets, run conditions (7 tests)
+├── chapter-08-required-components/ # #[require(...)] (5 tests)
+├── chapter-09-hooks/               # Component hooks, HookContext (4 tests)
+├── chapter-10-observers/           # On<E> API, triggers (4 tests)
+├── chapter-11-relationships/       # ChildOf, custom relations (7 tests)
+├── chapter-12-scenes/              # Scene building, hierarchies (6 tests)
+├── chapter-13-design-rules/        # Hooks vs observers vs systems (6 tests)
+├── chapter-14-rendering/           # Rendering (stub — requires GPU)
+├── ...
+├── chapter-21-ai/                  # FSM, utility AI, behavior trees (11 tests)
+├── chapter-21c-procedural-gen/     # RNG, cave/dungeon generation (12 tests)
+├── chapter-22-pathfinding/         # A* algorithm (12 tests)
+├── chapter-24-persistence/         # Serialization, checkpoints (7 tests)
+├── ...
+└── chapter-28b-deployment/         # Build config, deployment (stub)
 ```
 
-Use one crate per chapter. Within a chapter, use one executable under
-`examples/` per independently runnable section. Keep behavior in `src/lib.rs`
-when it can be verified without a renderer or window.
-
-## Validation
+## Uso
 
 ```bash
-cargo fmt --all --check
-cargo check --workspace --all-targets
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
+# Ejecutar todos los tests
+cargo test
+
+# Ejecutar tests de un capítulo específico
+cargo test -p bevy-book-chapter-10
+
+# Ejecutar un test específico
+cargo test -p bevy-book-chapter-22 -- a_star_around_wall
 ```
 
-Run the first headless example with:
+## Resultado
 
-```bash
-cargo run -p bevy-book-chapter-04 --example first_ecs
-```
+- **38 crates** cubriendo todos los capítulos (04–28b)
+- **112 tests** pasando
+- **Bevy 0.19.0** (`default-features = false` para tests headless)
 
-The workspace pins Bevy to `0.19.0`. Headless chapters inherit Bevy with
-default features disabled; chapter crates should opt into rendering, audio, or
-platform features only when their examples require them.
+## Capítulos con tests sustantivos
 
-## Adding An Example
+Los capítulos marcados con tests usan la API ECS pura (sin GPU):
 
-1. Create or reuse the corresponding `chapters/chapter-NN-topic` crate.
-2. Name the executable after the book section's concept, not its listing number.
-3. Add a behavioral test for deterministic ECS or domain logic.
-4. Run the full validation commands before opening a pull request.
+| Capítulo | Tests | Conceptos clave |
+|----------|-------|-----------------|
+| 04 | 10 | ECS básico, spawn, query |
+| 05 | 14 | Query, ParamSet, Resources |
+| 06 | 7 | Message API, combat |
+| 07 | 7 | System sets, run conditions |
+| 08 | 5 | `#[require()]` |
+| 09 | 4 | Component hooks, HookContext |
+| 10 | 4 | `On<E>` API (Bevy 0.19) |
+| 11 | 7 | ChildOf, custom Likes/LikedBy |
+| 12 | 6 | Scene building, hierarchies |
+| 13 | 6 | Hooks vs observers vs systems |
+| 21 | 11 | FSM, utility AI, behavior trees |
+| 21c | 12 | RNG, cave/dungeon generation |
+| 22 | 12 | A* algorithm, grid maps |
+| 24 | 7 | Serialization, checkpoints |
+
+Los capítulos de rendering/GPU (14–20, 23, 25–28b) son stubs que compilan
+pero requieren `DefaultPlugins` y GPU para tests funcionales.
+
+## Errata
+
+Las correcciones aplicadas al libro HTML están documentadas en
+`static/libros/bevy-2d-ecs/errata.md` del blog.
