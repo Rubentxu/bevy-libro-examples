@@ -44,8 +44,9 @@ cargo test -p bevy-book-chapter-22 -- a_star_around_wall
 ## Resultado
 
 - **38 crates** cubriendo todos los capítulos (04–28b)
-- **197 tests** pasando
+- **312 tests** pasando
 - **Bevy 0.19.0** (`default-features = false` para tests headless)
+- **Cero stubs** — todos los crates tienen tests sustantivos
 
 ## Capítulos con tests sustantivos
 
